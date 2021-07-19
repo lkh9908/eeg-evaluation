@@ -1,12 +1,24 @@
 import argparse
 from tqdm import tqdm
 import os, sys
+from loader import Loader
+from preprocessor import Cleaner
 from evaluator import Evaluator
 
+"""
+The starter file of EEG evaluator
+Author: Kaihao Liu
+
+Functionalities:
+1. Load EEG data formatted in .edf or .txt files
+2. Preprocess the data using functions provided by mne
+3. Evaluate quality of EEG data with a modified algorithm 
+(Based on the one created in the paper:
+"Signal Quality Assessment Model for Wearable 
+EEG Sensor on Prediction of Mental Stress")
+"""
 def main(args):
     files = os.listdir(args.input_path)
-    save_folder = args.save_folder
-    os.makedirs(save_folder, exist_ok=True)
     
     if args.input_name == None:        
         print('please input a file name with --input_name')
@@ -20,26 +32,29 @@ def main(args):
     
     ch_num = len(input_list)
         
-    # load data 
-    evaluator = Evaluator(args, input_list)
-    evaluator.file_setup()
-    evaluator.into_epochs()
+    loader = Loader(args, input_list)
+    raw = loader.file_setup()
+    cleaner = Cleaner(raw)
+    epochs = cleaner.into_epochs()
+    
     if args.filter:
-        evaluator.filter_by_freq(low=0.5, high=30)
+        epochs = cleaner.filter_by_freq(low=0.5, high=30)
 
     if args.eog:
         ch_name = input("Enter a channel for eog detection. Best if the channel is near eyes, like Fp1 and Fp2. If your input is txt file, all channels will be named like 'ch1': ")
-        evaluator.eog_removal(ch_name)
+        epochs = cleaner.eog_removal(ch_name)
     
     save_fif = str.lower(input("Do you want to save the processed data as a .fif? (y/n) "))
     
     if save_fif == 'yes' or save_fif == 'ye' or save_fif == 'y':
-        evaluator.save_epochs_fif()
+        loader.save_epochs_fif(epochs)
         
     save_edf = str.lower(input("Do you want to save the processed data as a .edf? (y/n) "))
     
     if save_edf == 'yes' or save_edf == 'ye' or save_edf == 'y':
-        evaluator.save_epochs_edf()
+        loader.save_epochs_edf(epochs)
+        
+    evaluator = Evaluator(epochs)
     evaluator.evaluate()
     scores = evaluator.get_score()
     print('scores of each epoch: ')
