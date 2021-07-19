@@ -10,8 +10,7 @@ from mne_extras import write_mne_edf
 
 class Evaluator(object):
     def __init__(self, args, files):
-        self.ref = args.reference
-        self.format = args.input_format
+        self.args = args
         self.files = files
         self.output_edf_original = './output_edf/' + args.input_name + '_original.edf'
         self.output_edf = './output_edf/' + args.input_name + '.edf'
@@ -21,11 +20,16 @@ class Evaluator(object):
         
         self.ch_num = 0
         self.sample_rate = 0
-        if self.format == 'txt':
+        self.score = []
+        self.avg_score = 0
+        
+    def file_setup(self):
+        #output a .edf file if the input is txt
+        if self.args.input_format == 'txt':
             signal = []
             headers = []
             
-            xml_file = open(args.input_path + args.input_name + '.xml', "r")
+            xml_file = open(self.args.input_path + self.args.input_name + '.xml', "r")
             xml_content = xml_file.read()
             my_ordered_dict = xmltodict.parse(xml_content)
             dict = json.loads(json.dumps(my_ordered_dict))
@@ -44,7 +48,7 @@ class Evaluator(object):
             j = 0
             for i in self.files:
                 if i[-3:] != 'xml' and i[-4:] != 'xysw':
-                    raw = np.loadtxt(args.input_path + i)
+                    raw = np.loadtxt(self.args.input_path + i)
                     signal.append(raw)
                     new_header = header.copy()
                     new_header['label'] = 'ch' + str(j)
@@ -60,9 +64,14 @@ class Evaluator(object):
             else:
                 print('txt data loaded into edf, edf saved at ./output_edf as: ' + self.output_edf_original)
             self.raw=mne.io.read_raw_edf(self.output_edf_original,preload=False)
-        elif self.format == 'edf' or self.format == 'bdf':
+            
+        #if already a .edf
+        elif self.args.input_format == 'edf' or self.args.input_format == 'bdf':
             self.raw = files
             ch_num = len(self.raw.ch_names)
+        
+    def into_epochs(self):
+        #divide into epochs
         new_events = mne.make_fixed_length_events(self.raw, duration=2.)
         event_dict = {'divide':1}
         reject_criteria = {'eeg' : 400e-6}       # 400 µV
@@ -116,31 +125,45 @@ class Evaluator(object):
                 print('txt data loaded into edf, edf saved at ./output_edf as: ' + self.output_edf)
     
     def evaluate(self):
-        print('evaluate')
-        df = self.epochs[0].to_data_frame()
-        var = np.var(df)[2:]
-        var_avg = sum(var) / len(var)
+        print('Evaluation Started')
         
-        psds_total, frqs_total = mne.time_frequency.psd_multitaper(self.epochs[0], fmin=0.5, fmax=44.5, tmin=None, tmax=None)
-        total_sum_pds = np.sum(psds_total)
-        
-        #power 50Hz
-        psds_power, frqs_power = mne.time_frequency.psd_multitaper(self.epochs[0], fmin=45, fmax=55, tmin=None, tmax=None)
-        power_sum_pds = np.sum(psds_power)
-        power_ratio = (power_sum_pds) / (total_sum_pds)
-        
-        #delta 2-4
-        psds_delta, frqs_delta = mne.time_frequency.psd_multitaper(self.epochs[0], fmin=1.5, fmax=4.5, tmin=None, tmax=None)
-        delta_sum_pds = np.sum(psds_delta)
-        delta_ratio = (delta_sum_pds) / (total_sum_pds)
-        
-        #alpha 8-12
-        psds_alpha, frqs_alpha = mne.time_frequency.psd_multitaper(self.epochs[0], fmin=7.5, fmax=12.5, tmin=None, tmax=None)
-        alpha_sum_pds = np.sum(psds_alpha)
-        alpha_ratio = (alpha_sum_pds) / (total_sum_pds)
-        
-        print(var_avg, power_ratio, delta_ratio, alpha_ratio)
-        
+        for i in range(len(self.epochs)):
+            df = self.epochs[i].to_data_frame()
+            var = np.var(df)[2:]
+            var_avg = sum(var) / len(var)
+
+            psds_total, frqs_total = mne.time_frequency.psd_multitaper(self.epochs[i], fmin=0.5, fmax=44.5, tmin=None, tmax=None)
+            total_sum_pds = np.sum(psds_total)
+
+            #power 50Hz
+            psds_power, frqs_power = mne.time_frequency.psd_multitaper(self.epochs[i], fmin=45, fmax=55, tmin=None, tmax=None)
+            power_sum_pds = np.sum(psds_power)
+            power_ratio = (power_sum_pds) / (total_sum_pds)
+
+            #delta 2-4
+            psds_delta, frqs_delta = mne.time_frequency.psd_multitaper(self.epochs[i], fmin=1.5, fmax=4.5, tmin=None, tmax=None)
+            delta_sum_pds = np.sum(psds_delta)
+            delta_ratio = (delta_sum_pds) / (total_sum_pds)
+
+            #delta 5-7
+            psds_theta, frqs_theta = mne.time_frequency.psd_multitaper(self.epochs[i], fmin=4.5, fmax=7.5, tmin=None, tmax=None)
+            theta_sum_pds = np.sum(psds_theta)
+            theta_ratio = (theta_sum_pds) / (total_sum_pds)
+
+            #alpha 8-12
+            psds_alpha, frqs_alpha = mne.time_frequency.psd_multitaper(self.epochs[i], fmin=7.5, fmax=12.5, tmin=None, tmax=None)
+            alpha_sum_pds = np.sum(psds_alpha)
+            alpha_ratio = (alpha_sum_pds) / (total_sum_pds)
+
+            sum_DTA = delta_ratio + theta_ratio + alpha_ratio
+            new_args =  [var_avg, power_ratio, sum_DTA]
+            self.calc_score(new_args)
+        self.avg_score = np.mean(self.score)
+    
+    def calc_score(self, args):
+        var_avg = args[0]
+        power_ratio = args[1]
+        sum_DTA = args[2]
         #y1: variance score
         y1 = 0
         #x1: variance
@@ -150,9 +173,10 @@ class Evaluator(object):
             y1 = 0.02*np.power(x1,2)
         elif x1 >= 50 and x1 < 100:
             y1 = 0.6*x1 + 20
-        elif x1 >= 100 and x1 < 2000:
+        #changed third condition from 2000 to 3000
+        elif x1 >= 100 and x1 < 3000:
             y1 = 100
-        elif x1 >= 2000 and x1 < 5000:
+        elif x1 >= 3000 and x1 < 5000:
             y1 = -0.013333*x1 + 126.6
         elif x1 >= 5000 and x1 < 10000:
             y1 = 0.006*x1 + 90
@@ -180,14 +204,15 @@ class Evaluator(object):
         #y3: eeg composition score
         y3 = 0
         #x3: alpha wave / Total
-        x3 = delta_ratio + alpha_ratio + theta_ratio
+        x3 = sum_DTA
 
-        if x3 < 0.35:
-        #   y3 = 2.8 * np.power(x3,2)
-            y3 = 4.375 * np.power(x3,2)
+        if x3 < 0.5:
+            y3 = 2.8 * np.power(x3,2)
+        #             y3 = 4.375 * np.power(x3,2)
         else:
-        #   y3 = 1.2 * np.power(x3,2) + 2.4*x3 - 0.2
-            y3 = 0.376176*np.power(x3,2) + 0.623824
+        #change 1.2 to -1.2
+            y3 = -1.2 * np.power(x3,2) + 2.4*x3 - 0.2
+        #             y3 = 0.376176*np.power(x3,2) + 0.623824
 
         print('x1: ' + str(x1))
         print('x2: ' + str(x2))
@@ -197,6 +222,13 @@ class Evaluator(object):
         print('y2: ' + str(y2))
         print('y3: ' + str(y3))
 
-        print((y1*y2)*y3)
+        #         print((y1*y2)*y3)
+        self.score.append((y1*y2)*y3)
+        
+    def get_score(self):
+        return [self.score, self.avg_score]
+
+        
+ 
         
             
