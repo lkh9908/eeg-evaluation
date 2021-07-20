@@ -1,12 +1,6 @@
-import pyedflib
 import numpy as np
-import xmltodict
-import json
 import mne
-import matplotlib
-import math
-import pathlib
-from mne_extras import write_mne_edf
+
 
 """
 The Cleaner class
@@ -19,6 +13,10 @@ class Cleaner(object):
         self.epochs = None
         
     def into_epochs(self):
+        """
+        input  self.raw,
+        output data divided into epochs
+        """
         #divide into epochs
         new_events = mne.make_fixed_length_events(self.raw, duration=2.)
         event_dict = {'divide':1}
@@ -32,12 +30,19 @@ class Cleaner(object):
         return self.epochs
 
     def filter_by_freq(self, low=0.5, high=30):
+        """
+        input  self.epochs,
+        output filtered self.epochs
+        """
         self.epochs.load_data()
         self.epochs.filter(l_freq=low, h_freq=high)
         return self.epochs
         
     def eog_removal(self, ch_name):
-        #removes eog movement using function provided by mne
+        """
+        input  self.raw,
+        output self.epochs with eog movement removed using mne's built in method
+        """
         eog_projs, eog_events = mne.preprocessing.compute_proj_eog(self.raw, n_grad=0, n_mag=0, n_eeg=1, ch_name=ch_name, reject = None)
         projs = eog_projs
         self.epochs.add_proj(projs)

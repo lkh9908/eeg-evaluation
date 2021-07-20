@@ -61,6 +61,8 @@ def main(args):
     print(scores[0])
     print('avg score: ')
     print(scores[1])
+    print('score of epochs as a whole: ')
+    print(scores[2])
 
         
 if __name__ == '__main__':
@@ -70,6 +72,8 @@ if __name__ == '__main__':
                         help='Path to the test data, can be image folder, image path, image list, video')
     parser.add_argument('-n', '--input_name', default=None, type=str,
                         help='Enter file name. Please remove the _Ch part')
+    parser.add_argument('-t', '--is_test', default=False, type=lambda x: x.lower() in ['true', '1'],
+                        help='Whether the input is a test example, which means no .xml file and default to 1024 sample frequency' )
     # process test images
     parser.add_argument('-r', '--reference', default='normal', type=str,
                         help='Define reference point. Options are normal, ear, and forehead')

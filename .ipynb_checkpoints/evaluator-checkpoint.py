@@ -1,12 +1,5 @@
-import pyedflib
 import numpy as np
-import xmltodict
-import json
 import mne
-import matplotlib
-import math
-import pathlib
-from mne_extras import write_mne_edf
 
 """
 Evaluate quality of EEG data with a modified algorithm 
@@ -29,6 +22,13 @@ class Evaluator(object):
         self.overall_score = 0
     
     def evaluate(self):
+        """
+        input  self.epochs,
+        output 
+        score of each epoch as an array
+        mean score of all epochs
+        score of the epochs as a whole
+        """
         print('Evaluation Started')
         
         #find grading criteria of each epoch 
@@ -40,12 +40,27 @@ class Evaluator(object):
             [power_ratio, sum_DTA] = self.find_proportions(self.epochs[i])
             #calculate score
             new_args =  [var_avg, power_ratio, sum_DTA]
-            self.calc_score(new_args)
+            this_score = self.calc_score(new_args)
+            self.score.append(this_score)
         self.avg_score = np.mean(self.score)
-#         self.overall_score = self.epochs
-# todo: overall score
+        
+        df_all = self.epochs.to_data_frame()
+        var_all = np.var(df_all)[2:]
+        var_avg_all = sum(var_all) / len(var_all)
+        [power_ratio_all, sum_DTA_all] = self.find_proportions(self.epochs)
+        #calculate score
+        new_args_all =  [var_avg_all, power_ratio_all, sum_DTA_all]
+        score_all = self.calc_score(new_args_all)
+        self.overall_score = score_all
+
         
     def find_proportions(self, epoch):
+        """
+        input  epoch,
+        output 
+        an array containing proportion of 50 Hz
+        and the sum of delta, theta, and alpha waves
+        """
         psds_total, frqs_total = mne.time_frequency.psd_multitaper(self.epochs, fmin=0.5, fmax=44.5, tmin=None, tmax=None)
         total_sum_pds = np.sum(psds_total)
 
@@ -74,6 +89,13 @@ class Evaluator(object):
         return [power_ratio, sum_DTA]
     
     def calc_score(self, args):
+        """
+        input  args containing variables for score evaluation:
+        variance, 50 Hz ratio, and sum of delta, theta, and alpha wave,
+        output 
+        an array contains proportion of 50 Hz
+        and the sum of delta, theta, and alpha waves
+        """
         var_avg = args[0]
         power_ratio = args[1]
         sum_DTA = args[2]
@@ -134,10 +156,16 @@ class Evaluator(object):
         print('y3: ' + str(y3))
 
         #print((y1*y2)*y3)
-        self.score.append((y1*y2)*y3)
+        return ((y1*y2)*y3)
         
     def get_score(self):
-        return [self.score, self.avg_score]
+        """
+        input  self,
+        output 
+        an array containing 
+        self.score, self.avg_score, and self.overall_score
+        """
+        return [self.score, self.avg_score, self.overall_score]
 
         
  

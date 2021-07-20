@@ -6,7 +6,6 @@ import mne
 import matplotlib
 import math
 import pathlib
-from mne_extras import write_mne_edf
 
 """
 The Loader class
@@ -38,11 +37,14 @@ class Loader(object):
             headers = []
             
             #read sample frequency from a .xml file
-            xml_file = open(self.args.input_path + self.args.input_name + '.xml', "r")
-            xml_content = xml_file.read()
-            my_ordered_dict = xmltodict.parse(xml_content)
-            dict = json.loads(json.dumps(my_ordered_dict))
-            self.sample_rate = eval(dict['RECORD_INFO']['Record']['SamplesFreq'])
+            if self.args.is_test:
+                self.sample_rate = 1024
+            else:
+                xml_file = open(self.args.input_path + self.args.input_name + '.xml', "r")
+                xml_content = xml_file.read()
+                my_ordered_dict = xmltodict.parse(xml_content)
+                dict = json.loads(json.dumps(my_ordered_dict))
+                self.sample_rate = eval(dict['RECORD_INFO']['Record']['SamplesFreq'])
             
             #define header, needed for .edf file
             header = {'label':'ch_name', 
