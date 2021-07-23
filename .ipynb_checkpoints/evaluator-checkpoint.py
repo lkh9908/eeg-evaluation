@@ -85,7 +85,7 @@ class Evaluator(object):
         alpha_ratio = (alpha_sum_pds) / (total_sum_pds)
 
         sum_DTA = delta_ratio + theta_ratio + alpha_ratio
-       
+        print('delta: ' + str(delta_ratio) + ', theta: ' + str(theta_ratio) + ', alpha: ' + str(alpha_ratio))
         return [power_ratio, sum_DTA]
     
     def calc_score(self, args):
@@ -113,10 +113,11 @@ class Evaluator(object):
             y1 = 100
         elif x1 >= 3000 and x1 < 5000:
             y1 = -0.013333*x1 + 126.6
+        #changed 0.006 to -0.006
         elif x1 >= 5000 and x1 < 10000:
-            y1 = 0.006*x1 + 90
+            y1 = -0.006*x1 + 90
         else:
-            y1 = 15/0.02*np.power((x1-10000),2)
+            y1 = 15/np.power((x1-10000),2)
 
         #y2: power voltage score
         y2 = 0
@@ -131,7 +132,7 @@ class Evaluator(object):
         elif x2 >= 0.1 and x2 < 5:
             y2 = 0.8 - 0.00833*np.power((x2-0.1),2)
         elif x2 >= 5 and x2 < 10:
-            y2 = 0.9 - np.power(0.06,2)
+            y2 = 0.9 - 0.06*2
         else:
             y2 = 30 / np.power(x2,2)
 

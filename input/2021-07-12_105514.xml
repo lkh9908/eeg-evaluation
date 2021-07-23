@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<RECORD_INFO xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Record>
+    <SamplesFreq>1024</SamplesFreq>
+    <ObjectCount>4</ObjectCount>
+    <FilterPara>0.1,60;0.1,60;0,1500;0,1500</FilterPara>
+    <StartTime>2021-07-12 10:55:15</StartTime>
+    <EndTime>2021-07-12 10:55:58</EndTime>
+    <RecordCount>43764</RecordCount>
+    <Duration>42.776</Duration>
+  </Record>
+  <Version>
+    <Software>XYBD_V100</Software>
+    <SubordinateSoftware>CSV_100_210127</SubordinateSoftware>
+    <DongleSoftware>DSV_100_200707</DongleSoftware>
+    <SubordinateHardware>CHV_251_200711</SubordinateHardware>
+    <DongleHardware>DHV_100_191225</DongleHardware>
+    <Communication>CWV_249_210125</Communication>
+    <NeoFile>CFV_142_200821</NeoFile>
+  </Version>
+  <Stimulate>
+    <PulseWidth>0</PulseWidth>
+    <StimRatio>0</StimRatio>
+    <StimMode>0</StimMode>
+  </Stimulate>
+</RECORD_INFO>

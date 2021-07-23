@@ -19,18 +19,23 @@ class Loader(object):
         self.files = files
         
         #define output path
-        self.output_edf_original = './output_edf/' + args.input_name + '_original.edf'
-        self.output_edf = './output_edf/' + args.input_name + '.edf'
-        self.output_fif = './output_fif/' + args.input_name + '-epo.fif'
+        self.output_edf_original = args.output_path + args.input_name + '_original.edf'
+        self.output_edf = args.output_path + args.input_name + '.edf'
+        self.output_fif = args.output_path + args.input_name + '-epo.fif'
         
         #define information needed to write an .edf file
         self.raw = None
         self.epochs = None
+        self.ch_names = []
         self.ch_num = 0
         self.sample_rate = 0
 
         
     def file_setup(self):
+        """
+        input  args from user input and file lists
+        output a mne.raw file containing the data
+        """
         #output a .edf file if the input is txt
         if self.args.input_format == 'txt':
             signal = []
@@ -50,10 +55,10 @@ class Loader(object):
             header = {'label':'ch_name', 
                     'dimension': 'uV',
                     'sample_rate': self.sample_rate,
-                    'physical_max': 5000,
-                    "physical_min": -5000,
-                    'digital_max': 5000,
-                    'digital_min': -5000,
+                    'physical_max': 50000,
+                    "physical_min": -50000,
+                    'digital_max': 50000,
+                    'digital_min': -50000,
                     'transducer': 'None',
                     'prefilter': 'None'}
 
@@ -70,49 +75,57 @@ class Loader(object):
             
             #write edf
             with open(self.output_edf_original, 'w') as output:
-                flag = pyedflib.highlevel.write_edf(output.name, signal, headers, header=None, digital=False, file_type=-1, block_size=1)
+                flag = pyedflib.highlevel.write_edf(output.name, signal, headers, header=None, digital=False, file_type=3, block_size=1)
             if flag == False:
                 print('unable to save file into .edf')
                 exit()
             else:
                 print('txt data loaded into edf, edf saved at ./output_edf as: ' + self.output_edf_original)
-            self.raw=mne.io.read_raw_edf(self.output_edf_original,preload=False)
+            self.raw=mne.io.read_raw_edf(self.output_edf_original,preload=True)
+            self.ch_names = self.raw.ch_names
             
         #if already a .edf
-        elif self.args.input_format == 'edf' or self.args.input_format == 'bdf':
-            self.raw = files
-            ch_num = len(self.raw.ch_names)
+        elif self.args.input_format == 'bdf':
+            self.raw = mne.io.read_raw_bdf(self.args.input_path + self.files[0], preload = True)
+            self.ch_num = len(self.raw.ch_names)
+            self.ch_names = self.raw.ch_names
+            self.sample_rate = self.raw.info['sfreq']
+            
+            print(self.raw.info)
+        elif self.args.input_format == 'edf':
+            self.raw = mne.io.read_raw_edf(self.args.input_path + self.files[0], preload = True)
+            self.ch_num = len(self.raw.ch_names)
+            self.ch_names = self.raw.ch_names
+            self.sample_rate = self.raw.info['sfreq']
             
         return self.raw
         
+    def save_fif(self, data):
+        data.save(self.output_fif, overwrite=True)
         
-    def save_epochs_fif(self, epochs):
-        epochs.save(self.output_fif, overwrite=True)
-        
-    def save_epochs_edf(self, epochs):
-        df = epochs.to_data_frame()
+    def save_edf(self, data):
+        df = data.to_data_frame()
         out_raw = []
         headers = []
         header = {'label':'ch_name', 
                     'dimension': 'uV',
                     'sample_rate': self.sample_rate,
-                    'physical_max': 5000,
-                    "physical_min": -5000,
-                    'digital_max': 5000,
-                    'digital_min': -5000,
+                    'physical_max': 50000,
+                    "physical_min": -50000,
+                    'digital_max': 50000,
+                    'digital_min': -50000,
                     'transducer': 'None',
                     'prefilter': 'None'}
-        j = 0
-        for i in range(self.ch_num):
-            out_raw_ch = np.array(df['ch' + str(i)])
+        
+        for i in self.ch_names:
+            out_raw_ch = np.array(df[i])
             out_raw.append(out_raw_ch)
             new_header = header.copy()
-            new_header['label'] = 'ch' + str(j)
-            j = j+1
+            new_header['label'] = i
             headers.append(new_header)
             
         with open(self.output_edf, 'w') as output:
-            flag = pyedflib.highlevel.write_edf(output.name, out_raw, headers, header=None, digital=False, file_type=-1, block_size=1)
+            flag = pyedflib.highlevel.write_edf(output.name, out_raw, headers, header=None, digital=False, file_type=3, block_size=1)
             if flag == False:
                 print('unable to save file into .edf')
                 exit()

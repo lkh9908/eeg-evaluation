@@ -1,5 +1,6 @@
 import numpy as np
 import mne
+from loader import Loader
 
 
 """
@@ -11,6 +12,30 @@ class Cleaner(object):
     def __init__(self, args):
         self.raw = args
         self.epochs = None
+        
+    def remove_amplification(self):
+        """
+        input self.raw
+        read the ch_names, acquire amplification factor as in naming convention
+        output deamplified data in self.raw
+        """
+#         print(self.raw.get_data())
+#         print(self.raw)
+        for i in self.raw.ch_names:
+            index = 0
+            for j in i:
+                if j == '_':
+                    break
+                index = index + 1
+            #does not contain amplification factor in the format of Ch#_amp, assume as 1
+            if i[index+1:] == '':
+                amp = 1
+            else:
+                amp = int(i[index+1:])
+            print('Based on channel name naming format, channel ' + i + ' has been amplified by a factor of ' + str(amp) + '. Deamplifying the data...')
+            self.raw = self.raw.apply_function(lambda x: x / amp, picks = [i] )
+#             print(self.raw)
+#         print(self.raw.get_data())
         
     def into_epochs(self):
         """
@@ -25,8 +50,10 @@ class Cleaner(object):
         reject_criteria = {'eeg' : 400e-6}       # 400 µV
         flat_criteria = {'eeg' : 1e-6}          # 1 µV
 
-        self.epochs = mne.Epochs(self.raw,new_events, reject=reject_criteria, flat=flat_criteria,
-                            reject_by_annotation=False, preload=True)
+#         self.epochs = mne.Epochs(self.raw,new_events, reject=reject_criteria, flat=flat_criteria,
+#                             reject_by_annotation=False, preload=True)
+        self.epochs = mne.Epochs(self.raw,new_events, reject_by_annotation=False, preload=True)
+#         self.epochs.plot()
         return self.epochs
 
     def filter_by_freq(self, low=0.5, high=30):
@@ -35,7 +62,7 @@ class Cleaner(object):
         output filtered self.epochs
         """
         self.epochs.load_data()
-        self.epochs.filter(l_freq=low, h_freq=high)
+        self.epochs.filter(l_freq=low, h_freq=high, picks = 'all')
         return self.epochs
         
     def eog_removal(self, ch_name):
