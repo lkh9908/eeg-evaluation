@@ -47,6 +47,10 @@ class Evaluator(object):
         df_all = self.epochs.to_data_frame()
         var_all = np.var(df_all)[2:]
         var_avg_all = sum(var_all) / len(var_all)
+        print('!!!!!!!!!!!!!!!!!!!!!!')
+        print(df_all)
+        print(var_all)
+        print(len(var_all))
         [power_ratio_all, sum_DTA_all] = self.find_proportions(self.epochs)
         #calculate score
         new_args_all =  [var_avg_all, power_ratio_all, sum_DTA_all]
