@@ -46,13 +46,14 @@ class ExampleSignalTest(unittest.TestCase):
             
         
     def test_save_edf(self):
-        self.test_loader.save_edf(self.test_epochs)
+        'testing save edf'
+        self.test_loader.save_edf(self.test_raw)
         new_raw = mne.io.read_raw_edf('tests/t_output/test1.edf', preload = True)
-#         self.assertEqual(new_raw,self.test_raw)
-#         self.assertEqual(new_raw.get_data().all(),self.test_raw.get_data().all())
-        print('lulululululalalallaalal')
-        print(new_raw.get_data())
+#         np.set_printoptions(threshold=np.inf)
         print(self.test_raw.get_data())
+        print(new_raw.get_data())
+        print(self.test_epochs.get_data(['all']))
+        self.assertEqual(new_raw.get_data().all(),self.test_raw.get_data().all())
         
     def test_filter_by_freq(self):
         test_epochs_copy = self.test_epochs.copy()
