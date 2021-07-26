@@ -29,6 +29,11 @@ class Loader(object):
         self.ch_names = []
         self.ch_num = 0
         self.sample_rate = 0
+        
+        self.physical_max = 5000
+        self.physical_min = -5000
+        self.digital_max = 5000
+        self.digital_min = -5000
 
         
     def file_setup(self):
@@ -55,10 +60,10 @@ class Loader(object):
             header = {'label':'ch_name', 
                     'dimension': 'uV',
                     'sample_rate': self.sample_rate,
-                    'physical_max': 50000,
-                    "physical_min": -50000,
-                    'digital_max': 50000,
-                    'digital_min': -50000,
+                    'physical_max': self.physical_max,
+                    "physical_min": self.physical_min,
+                    'digital_max': self.digital_max,
+                    'digital_min': self.digital_min,
                     'transducer': 'None',
                     'prefilter': 'None'}
 
@@ -66,13 +71,21 @@ class Loader(object):
             for i in self.files:
                 if i[-3:] != 'xml' and i[-4:] != 'xysw':
                     raw = np.loadtxt(self.args.input_path + i)
+                    
+                    self.physical_max = np.max(raw)
+                    self.physical_min = np.min(raw)
+                
+                
                     signal.append(raw)
                     new_header = header.copy()
                     new_header['label'] = 'ch' + str(j)
+                    new_header['physical_max'] = self.physical_max
+                    new_header['physical_min'] = self.physical_min
+
                     j = j+1
                     headers.append(new_header)
                     self.ch_num = self.ch_num+1
-            
+                
             #write edf
             with open(self.output_edf_original, 'w') as output:
                 flag = pyedflib.highlevel.write_edf(output.name, signal, headers, header=None, digital=False, file_type=3, block_size=1)
@@ -97,6 +110,13 @@ class Loader(object):
             self.ch_num = len(self.raw.ch_names)
             self.ch_names = self.raw.ch_names
             self.sample_rate = self.raw.info['sfreq']
+        elif self.args.input_format =='mne':
+            mne_exp = mne.datasets.eegbci.load_data(1, 2, path=None, force_update=False, update_path=None, base_url='https://physionet.org/files/eegmmidb/1.0.0/', verbose=None)[0]
+            self.raw = mne.io.read_raw_edf(mne_exp, preload = True)
+            self.ch_num = len(self.raw.ch_names)
+            self.ch_names = self.raw.ch_names
+            self.sample_rate = self.raw.info['sfreq']
+            
             
         return self.raw
         
@@ -110,10 +130,10 @@ class Loader(object):
         header = {'label':'ch_name', 
                     'dimension': 'uV',
                     'sample_rate': self.sample_rate,
-                    'physical_max': 50000,
-                    "physical_min": -50000,
-                    'digital_max': 50000,
-                    'digital_min': -50000,
+                    'physical_max': self.physical_max,
+                    "physical_min": self.physical_min,
+                    'digital_max': self.digital_max,
+                    'digital_min': self.digital_min,
                     'transducer': 'None',
                     'prefilter': 'None'}
         

@@ -35,8 +35,12 @@ class Evaluator(object):
         for i in range(len(self.epochs)):
             #variance
             df = self.epochs[i].to_data_frame()
-            var = np.var(df)[2:]
-            var_avg = sum(var) / len(var)    
+            print(df)
+            var = []
+            for j in self.epochs.ch_names:
+                var.append(np.var(df[j]))
+            var_avg = sum(var) / len(var)
+
             [power_ratio, sum_DTA] = self.find_proportions(self.epochs[i])
             #calculate score
             new_args =  [var_avg, power_ratio, sum_DTA]
@@ -45,12 +49,11 @@ class Evaluator(object):
         self.avg_score = np.mean(self.score)
         
         df_all = self.epochs.to_data_frame()
-        var_all = np.var(df_all)[2:]
+        var_all = []
+        for i in self.epochs.ch_names:
+            var_all.append(np.var(df_all[i]))
+
         var_avg_all = sum(var_all) / len(var_all)
-        print('!!!!!!!!!!!!!!!!!!!!!!')
-        print(df_all)
-        print(var_all)
-        print(len(var_all))
         [power_ratio_all, sum_DTA_all] = self.find_proportions(self.epochs)
         #calculate score
         new_args_all =  [var_avg_all, power_ratio_all, sum_DTA_all]
@@ -65,26 +68,26 @@ class Evaluator(object):
         an array containing proportion of 50 Hz
         and the sum of delta, theta, and alpha waves
         """
-        psds_total, frqs_total = mne.time_frequency.psd_multitaper(self.epochs, fmin=0.5, fmax=44.5, tmin=None, tmax=None)
+        psds_total, frqs_total = mne.time_frequency.psd_multitaper(epoch, fmin=0, fmax=60, tmin=None, tmax=None)
         total_sum_pds = np.sum(psds_total)
 
         #power 50Hz
-        psds_power, frqs_power = mne.time_frequency.psd_multitaper(self.epochs, fmin=45, fmax=55, tmin=None, tmax=None)
+        psds_power, frqs_power = mne.time_frequency.psd_multitaper(epoch, fmin=47, fmax=53, tmin=None, tmax=None)
         power_sum_pds = np.sum(psds_power)
         power_ratio = (power_sum_pds) / (total_sum_pds)
 
         #delta 2-4
-        psds_delta, frqs_delta = mne.time_frequency.psd_multitaper(self.epochs, fmin=1.5, fmax=4.5, tmin=None, tmax=None)
+        psds_delta, frqs_delta = mne.time_frequency.psd_multitaper(epoch, fmin=1, fmax=5, tmin=None, tmax=None)
         delta_sum_pds = np.sum(psds_delta)
         delta_ratio = (delta_sum_pds) / (total_sum_pds)
 
         #delta 5-7
-        psds_theta, frqs_theta = mne.time_frequency.psd_multitaper(self.epochs, fmin=4.5, fmax=7.5, tmin=None, tmax=None)
+        psds_theta, frqs_theta = mne.time_frequency.psd_multitaper(epoch, fmin=4, fmax=8, tmin=None, tmax=None)
         theta_sum_pds = np.sum(psds_theta)
         theta_ratio = (theta_sum_pds) / (total_sum_pds)
 
         #alpha 8-12
-        psds_alpha, frqs_alpha = mne.time_frequency.psd_multitaper(self.epochs, fmin=7.5, fmax=12.5, tmin=None, tmax=None)
+        psds_alpha, frqs_alpha = mne.time_frequency.psd_multitaper(epoch, fmin=7, fmax=13, tmin=None, tmax=None)
         alpha_sum_pds = np.sum(psds_alpha)
         alpha_ratio = (alpha_sum_pds) / (total_sum_pds)
 

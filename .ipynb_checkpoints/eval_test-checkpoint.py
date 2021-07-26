@@ -11,7 +11,10 @@ import numpy as np
 class ExampleSignalTest(unittest.TestCase):
     def setUp(self):
         self.args = Namespace(input_path='tests/t_input/', output_path = 'tests/t_output/', input_name='test1', is_test=True, reference='normal', input_format='txt', filter=True, eog=True)
-        self.test_files = files = os.listdir(self.args.input_path)
+        self.test_files = os.listdir(self.args.input_path)
+        print('important number to be noticed `(*>﹏<*)′')
+        print('test files: ')
+        print(self.test_files)
         self.test_loader = loader.Loader(self.args, self.test_files)
         self.test_raw = self.test_loader.file_setup()
         self.test_cleaner = preprocessor.Cleaner(self.test_raw)
@@ -23,9 +26,24 @@ class ExampleSignalTest(unittest.TestCase):
         
     def test_load_txt(self):
         self.assertEqual(self.test_raw.info['nchan'],2)
-        self.assertEqual(self.test_raw.info['ch_names'],['ch0','ch1'])
+        self.assertEqual(self.test_raw.info['ch_names'],['ch0', 'ch1'])
         print('important number to be noticed `(*>﹏<*)′')
         print(self.test_raw.info)
+        var_raw = []
+        test_var = []
+        var_data = self.test_raw.to_data_frame()
+        print((var_data))
+#         print(len(var_data[0]))
+#         print(len(var_data[0][0]))
+        for i in self.test_raw.ch_names:
+            var_raw.append(np.var(var_data[i]))
+        for i in self.test_files:
+            print('xxxxxxxxxsaaaaaadfasfsa')
+            print(i)
+            raw = np.loadtxt('tests/t_input/' + i)
+            test_var.append(np.var(raw))
+        print(var_raw, test_var)
+            
         
     def test_save_edf(self):
         self.test_loader.save_edf(self.test_epochs)
@@ -71,6 +89,7 @@ class ExampleSignalTest(unittest.TestCase):
         
     def test_find_proportions(self):
         result = self.test_evaluator.find_proportions(self.test_epochs)
+        print(11111111111111111111222222222222222)
         print(result)
         self.assertGreater(2, 1)
 

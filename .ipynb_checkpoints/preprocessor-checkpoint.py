@@ -19,8 +19,6 @@ class Cleaner(object):
         read the ch_names, acquire amplification factor as in naming convention
         output deamplified data in self.raw
         """
-#         print(self.raw.get_data())
-#         print(self.raw)
         for i in self.raw.ch_names:
             index = 0
             for j in i:
@@ -34,8 +32,6 @@ class Cleaner(object):
                 amp = int(i[index+1:])
             print('Based on channel name naming format, channel ' + i + ' has been amplified by a factor of ' + str(amp) + '. Deamplifying the data...')
             self.raw = self.raw.apply_function(lambda x: x / amp, picks = [i] )
-#             print(self.raw)
-#         print(self.raw.get_data())
         
     def into_epochs(self):
         """

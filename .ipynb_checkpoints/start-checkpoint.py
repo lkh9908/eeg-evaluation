@@ -41,7 +41,7 @@ def main(args):
     epochs = cleaner.into_epochs()
     
     if args.filter:
-        epochs = cleaner.filter_by_freq(low=0.5, high=30)
+        epochs = cleaner.filter_by_freq(low=0.5, high=40)
 
     if args.eog:
         ch_name = input("Enter a channel for eog detection. Best if the channel is near eyes, like Fp1 and Fp2. If your input is txt file, all channels will be named like 'ch1': ")
