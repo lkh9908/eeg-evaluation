@@ -68,7 +68,7 @@ class Evaluator(object):
         an array containing proportion of 50 Hz
         and the sum of delta, theta, and alpha waves
         """
-        psds_total, frqs_total = mne.time_frequency.psd_multitaper(epoch, fmin=0, fmax=60, tmin=None, tmax=None)
+        psds_total, frqs_total = mne.time_frequency.psd_multitaper(epoch, fmin=0, fmax=45, tmin=None, tmax=None)
         total_sum_pds = np.sum(psds_total)
 
         #power 50Hz

@@ -50,12 +50,12 @@ def main(args):
     save_fif = str.lower(input("Do you want to save the processed data as a .fif? (y/n) "))
     
     if save_fif == 'yes' or save_fif == 'ye' or save_fif == 'y':
-        loader.save_fif(epochs)
+        loader.save_fif(raw)
         
     save_edf = str.lower(input("Do you want to save the processed data as a .edf? (y/n) "))
     
     if save_edf == 'yes' or save_edf == 'ye' or save_edf == 'y':
-        loader.save_edf(epochs)
+        loader.save_edf(raw)
         
     evaluator = Evaluator(epochs)
     evaluator.evaluate()

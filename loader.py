@@ -30,10 +30,10 @@ class Loader(object):
         self.ch_num = 0
         self.sample_rate = 0
         
-        self.physical_max = 5000
-        self.physical_min = -5000
-        self.digital_max = 5000
-        self.digital_min = -5000
+        self.physical_max = []
+        self.physical_min = []
+        self.digital_max = []
+        self.digital_min = []
 
         
     def file_setup(self):
@@ -60,10 +60,10 @@ class Loader(object):
             header = {'label':'ch_name', 
                     'dimension': 'uV',
                     'sample_rate': self.sample_rate,
-                    'physical_max': self.physical_max,
-                    "physical_min": self.physical_min,
-                    'digital_max': self.digital_max,
-                    'digital_min': self.digital_min,
+                    'physical_max': 5000,
+                    "physical_min": -5000,
+                    'digital_max': 5000,
+                    'digital_min': -5000,
                     'transducer': 'None',
                     'prefilter': 'None'}
 
@@ -71,16 +71,15 @@ class Loader(object):
             for i in self.files:
                 if i[-3:] != 'xml' and i[-4:] != 'xysw':
                     raw = np.loadtxt(self.args.input_path + i)
-                    
-                    self.physical_max = np.max(raw)
-                    self.physical_min = np.min(raw)
+                    self.physical_max.append(np.max(raw))
+                    self.physical_min.append(np.min(raw))
                 
                 
                     signal.append(raw)
                     new_header = header.copy()
                     new_header['label'] = 'ch' + str(j)
-                    new_header['physical_max'] = self.physical_max
-                    new_header['physical_min'] = self.physical_min
+                    new_header['physical_max'] = np.max(raw)
+                    new_header['physical_min'] = np.min(raw)
 
                     j = j+1
                     headers.append(new_header)
@@ -88,13 +87,15 @@ class Loader(object):
                 
             #write edf
             with open(self.output_edf_original, 'w') as output:
-                flag = pyedflib.highlevel.write_edf(output.name, signal, headers, header=None, digital=False, file_type=3, block_size=1)
+                flag = pyedflib.highlevel.write_edf(output.name, signal, headers, header=None, digital=False, file_type=-1, block_size=1)
             if flag == False:
                 print('unable to save file into .edf')
                 exit()
             else:
                 print('txt data loaded into edf, edf saved at ./output_edf as: ' + self.output_edf_original)
             self.raw=mne.io.read_raw_edf(self.output_edf_original,preload=True)
+            print(self.raw.get_data())
+            print(self.raw.to_data_frame())
             self.ch_names = self.raw.ch_names
             
         #if already a .edf
@@ -125,27 +126,33 @@ class Loader(object):
         
     def save_edf(self, data):
         df = data.to_data_frame()
+        print(df)
         out_raw = []
         headers = []
         header = {'label':'ch_name', 
                     'dimension': 'uV',
                     'sample_rate': self.sample_rate,
-                    'physical_max': self.physical_max,
-                    "physical_min": self.physical_min,
-                    'digital_max': self.digital_max,
-                    'digital_min': self.digital_min,
+                    'physical_max': 5000,
+                    "physical_min": -5000,
+                    'digital_max': 5000,
+                    'digital_min': -5000,
                     'transducer': 'None',
                     'prefilter': 'None'}
         
+        j = 0
         for i in self.ch_names:
             out_raw_ch = np.array(df[i])
             out_raw.append(out_raw_ch)
             new_header = header.copy()
-            new_header['label'] = i
+            new_header['physical_max'] = np.max(out_raw_ch)
+            new_header['physical_min'] = np.min(out_raw_ch)
+            new_header['digital_max'] = np.max(out_raw_ch)
+            new_header['digital_min'] = np.min(out_raw_ch)
+            
             headers.append(new_header)
             
         with open(self.output_edf, 'w') as output:
-            flag = pyedflib.highlevel.write_edf(output.name, out_raw, headers, header=None, digital=False, file_type=3, block_size=1)
+            flag = pyedflib.highlevel.write_edf(output.name, out_raw, headers, header=None, digital=False, file_type=-1, block_size=1)
             if flag == False:
                 print('unable to save file into .edf')
                 exit()
