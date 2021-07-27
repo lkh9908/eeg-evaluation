@@ -41,8 +41,6 @@ class Cleaner(object):
         #divide into epochs
         new_events = mne.make_fixed_length_events(self.raw, duration=2.)
         event_dict = {'divide':1}
-        print('i wanna dieeeeeeeeeeeee')
-        print(len(new_events))
         #reject data with extreme/flat amplitude
         reject_criteria = {'eeg' : 400e-6}       # 400 µV
         flat_criteria = {'eeg' : 1e-6}          # 1 µV
@@ -53,7 +51,7 @@ class Cleaner(object):
 #         self.epochs.plot()
         return self.epochs
 
-    def filter_by_freq(self, low=0.5, high=30):
+    def filter_by_freq(self, low=0.5, high=40):
         """
         input  self.epochs,
         output filtered self.epochs
@@ -62,11 +60,13 @@ class Cleaner(object):
         self.epochs.filter(l_freq=low, h_freq=high, picks = 'all')
         return self.epochs
         
-    def eog_removal(self, ch_name):
+    def eog_removal(self):
         """
         input  self.raw,
         output self.epochs with eog movement removed using mne's built in method
         """
+        print('ch_names are: ' + str(self.raw.ch_names))
+        ch_name = input("Enter a channel for eog detection. Best if the channel is near eyes, like Fp1 and Fp2. All channels will be named like 'CH_1': ")
         eog_projs, eog_events = mne.preprocessing.compute_proj_eog(self.raw, n_grad=0, n_mag=0, n_eeg=1, ch_name=ch_name, reject = None)
         projs = eog_projs
         self.epochs.add_proj(projs)

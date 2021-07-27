@@ -1,5 +1,4 @@
 import argparse
-from tqdm import tqdm
 import os, sys
 from loader import Loader
 from preprocessor import Cleaner
@@ -36,7 +35,8 @@ def main(args):
         
     cleaner = Cleaner(raw)
     
-    cleaner.remove_amplification()
+    if args.input_format == 'bdf' or args.input_format == 'edf':
+        cleaner.remove_amplification()
 
     epochs = cleaner.into_epochs()
     
@@ -44,8 +44,7 @@ def main(args):
         epochs = cleaner.filter_by_freq(low=0.5, high=40)
 
     if args.eog:
-        ch_name = input("Enter a channel for eog detection. Best if the channel is near eyes, like Fp1 and Fp2. If your input is txt file, all channels will be named like 'ch1': ")
-        epochs = cleaner.eog_removal(ch_name)
+        epochs = cleaner.eog_removal()
     
     save_fif = str.lower(input("Do you want to save the processed data as a .fif? (y/n) "))
     
@@ -79,11 +78,10 @@ if __name__ == '__main__':
                         help='Enter file name. Please remove the _Ch part')
     parser.add_argument('-t', '--is_test', default=False, type=lambda x: x.lower() in ['true', '1'],
                         help='Whether the input is a test example, which means no .xml file and default to 1024 sample frequency' )
-    # process test images
 #     parser.add_argument('-r', '--reference', default='normal', type=str,
 #                         help='Define reference point. Options are normal, ear, and forehead')
     parser.add_argument('-f', '--input_format', default='txt', type=str,
-                        help='Define input file format. Options are txt, edf, and bdf')
+                        help="Define input file format. Options are txt, edf, bdf, or mne (sample from mne web, need to specify a filename is want to save)")
     parser.add_argument('--filter', default=True, type=lambda x: x.lower() in ['true', '1'],
                         help='Whether to filter the data' )
     parser.add_argument('--eog', default=True, type=lambda x: x.lower() in ['true', '1'],
